@@ -6,18 +6,21 @@ import {
   TouchableOpacity,
   Text,
 } from 'react-native';
-import 'react-native-get-random-values';
 import {nanoid} from 'nanoid';
+import {useDispatch} from 'react-redux';
+import 'react-native-get-random-values';
 import Snackbar from 'react-native-snackbar';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import Layout from '@app/Layout/Layout';
+import Layout from '@app/layout/Layout';
+import {addSeason} from '@app/store/seasonsSlice';
 
 const Add = ({
   navigation,
 }: {
   navigation: {navigate: (routeName: string) => void};
 }) => {
+  const disPatch = useDispatch();
+
   const [name, setName] = useState('');
   const [episodeCount, setEpisodeCount] = useState('');
 
@@ -36,19 +39,8 @@ const Add = ({
         episodeCount,
         isWatched: false,
       };
-      const storedValues = await AsyncStorage.getItem('@Seasons_list');
 
-      if (storedValues) {
-        const seasons = JSON.parse(storedValues);
-        const newSeasonList = [...seasons, season];
-
-        await AsyncStorage.setItem(
-          '@Seasons_list',
-          JSON.stringify(newSeasonList),
-        );
-      } else {
-        await AsyncStorage.setItem('@Seasons_list', JSON.stringify([season]));
-      }
+      disPatch(addSeason(season));
 
       setName('');
       setEpisodeCount('');

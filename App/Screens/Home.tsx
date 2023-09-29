@@ -1,13 +1,20 @@
-import React, {useEffect, useState} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import React, {useEffect} from 'react';
+import {useSelector, useDispatch} from 'react-redux';
 import {useIsFocused} from '@react-navigation/native';
 import Icons from 'react-native-vector-icons/FontAwesome';
 import BouncyCheckbox from 'react-native-bouncy-checkbox';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {StyleSheet, Text, View, TouchableOpacity} from 'react-native';
 
-import Fab from '@app/Components/Fab';
-import Layout from '@app/Layout/Layout';
-import {TouchableOpacity} from 'react-native';
+import Fab from '@app/components/Fab';
+import Layout from '@app/layout/Layout';
+import {RootState} from '@app/store/store';
+
+import {
+  createSeasonList,
+  markSeasonWatched,
+  removeSeason,
+} from '@app/store/seasonsSlice';
 
 export type SeasonType = {
   id: string;
@@ -21,59 +28,42 @@ const Home = ({
 }: {
   navigation: {navigate: (routeName: string, params?: {}) => void};
 }) => {
+  const dispatch = useDispatch();
   const isFocused = useIsFocused();
-
-  const [seasonsList, setSeasonsList] = useState<SeasonType[]>([]);
-
-  const getSeasonsList = async () => {
-    // await AsyncStorage.clear();
-
-    const storedValues = await AsyncStorage.getItem('@Seasons_list');
-
-    if (!storedValues) {
-      setSeasonsList([]);
-      return;
-    }
-
-    const seasons = JSON.parse(storedValues);
-    setSeasonsList(seasons);
-  };
+  const {seasons} = useSelector((state: RootState) => state.seasons);
 
   const markWatched = async (id: string) => {
-    const newSeasonsList = seasonsList.map((season: SeasonType) => {
-      if (season.id === id) {
-        return {
-          ...season,
-          isWatched: !season.isWatched,
-        };
-      }
-
-      return season;
-    });
-
-    await AsyncStorage.setItem('@Seasons_list', JSON.stringify(newSeasonsList));
-    setSeasonsList(newSeasonsList);
+    dispatch(markSeasonWatched(id));
   };
 
   const deleteSeason = async (id: string) => {
-    const newSeasonsList = seasonsList.filter(
-      (season: SeasonType) => season.id !== id,
-    );
-
-    await AsyncStorage.setItem('@Seasons_list', JSON.stringify(newSeasonsList));
-    setSeasonsList(newSeasonsList);
+    dispatch(removeSeason(id));
   };
 
   useEffect(() => {
+    const getSeasonsList = async () => {
+      // await AsyncStorage.clear();
+
+      const storedValues = await AsyncStorage.getItem('@Seasons_list');
+
+      if (!storedValues) {
+        dispatch(createSeasonList([]));
+        return;
+      }
+
+      const storesSeasons = JSON.parse(storedValues);
+      dispatch(createSeasonList(storesSeasons));
+    };
+
     getSeasonsList();
-  }, [isFocused]);
+  }, [isFocused, dispatch]);
 
   return (
     <Layout>
       <View style={styles.container}>
         <View style={styles.list}>
-          {seasonsList.length >= 1 ? (
-            seasonsList.map((season: SeasonType) => (
+          {seasons.length >= 1 ? (
+            seasons.map((season: SeasonType) => (
               <View style={styles.listItem} key={season.id}>
                 <BouncyCheckbox
                   size={30}

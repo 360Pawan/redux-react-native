@@ -6,12 +6,13 @@ import {
   TouchableOpacity,
   Text,
 } from 'react-native';
+import {useDispatch} from 'react-redux';
 import 'react-native-get-random-values';
 import Snackbar from 'react-native-snackbar';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import Layout from '@app/Layout/Layout';
 import {SeasonType} from './Home';
+import Layout from '@app/layout/Layout';
+import {updateSeason} from '@app/store/seasonsSlice';
 
 const Edit = ({
   navigation,
@@ -32,6 +33,8 @@ const Edit = ({
     isWatched: false,
   });
 
+  const dispatch = useDispatch();
+
   const updateItem = async () => {
     if (!season.name || !season.episodeCount) {
       return Snackbar.show({
@@ -41,24 +44,9 @@ const Edit = ({
     }
 
     try {
-      const storedValues = await AsyncStorage.getItem('@Seasons_list');
+      dispatch(updateSeason(season));
 
-      if (storedValues) {
-        const seasons = JSON.parse(storedValues);
-        const newSeasonList = seasons.map((existingSeason: SeasonType) => {
-          if (existingSeason.id === season.id) {
-            return {...season};
-          }
-
-          return existingSeason;
-        });
-
-        await AsyncStorage.setItem(
-          '@Seasons_list',
-          JSON.stringify(newSeasonList),
-        );
-        navigation?.navigate('Home');
-      }
+      navigation?.navigate('Home');
     } catch (error) {
       console.log(error);
     }
